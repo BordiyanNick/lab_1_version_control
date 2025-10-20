@@ -1,0 +1,107 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# Етап 1: Завантаження та підготовка даних
+url = 'https://raw.githubusercontent.com/rikhuijzer/haberman-survival-dataset/main/haberman.csv'
+data = pd.read_csv(url)
+data.columns = ['Age', 'Year', 'Nodes', 'Survival']
+data['Survival'] = data['Survival'].apply(lambda x: 1 if x == 1 else 0)
+
+# Етап 2: Вибір ознак
+X = data[['Age', 'Nodes']]
+y = data['Survival']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Етап 3: Логістична регресія
+log_model = LogisticRegression()
+log_model.fit(X_train, y_train)
+y_pred_log = log_model.predict(X_test)
+
+print("=== Логістична регресія ===")
+print(f"Точність: {accuracy_score(y_test, y_pred_log):.2f}")
+print("Матриця плутанини:")
+print(confusion_matrix(y_test, y_pred_log))
+print("Звіт:")
+print(classification_report(y_test, y_pred_log))
+
+# Етап 4: Метод опорних векторів (SVM)
+svm_model = SVC(kernel='linear')
+svm_model.fit(X_train, y_train)
+y_pred_svm = svm_model.predict(X_test)
+
+print("\n=== Метод опорних векторів (SVM) ===")
+print(f"Точність: {accuracy_score(y_test, y_pred_svm):.2f}")
+print("Матриця плутанини:")
+print(confusion_matrix(y_test, y_pred_svm))
+print("Звіт:")
+print(classification_report(y_test, y_pred_svm))
+
+# Етап 5: Контрольне розпізнавання
+new_objects = np.array([
+    [45, 0],
+    [60, 5],
+    [70, 20],
+    [30, 1],
+    [55, 3]
+])
+
+log_predictions = log_model.predict(new_objects)
+svm_predictions = svm_model.predict(new_objects)
+
+print("\n=== Контрольне розпізнавання ===")
+print("Нові об'єкти:")
+print(new_objects)
+print("Прогноз логістичної регресії:", log_predictions)
+print("Прогноз SVM:", svm_predictions)
+
+# Етап 6: Візуалізація з кольоровими новими об'єктами
+plt.figure(figsize=(10, 6))
+
+# Всі об'єкти з датасету
+plt.scatter(data[data['Survival'] == 1]['Age'], data[data['Survival'] == 1]['Nodes'],
+            color='green', label='Вижив (1)', marker='o')
+plt.scatter(data[data['Survival'] == 0]['Age'], data[data['Survival'] == 0]['Nodes'],
+            color='red', label='Помер (0)', marker='s')
+
+# Нові об'єкти з кольором за логістичною регресією
+for i, point in enumerate(new_objects):
+    color = 'green' if log_predictions[i] == 1 else 'red'
+    plt.scatter(point[0], point[1], color=color, marker='x', s=100,
+                label='Новий об\'єкт (LogReg)' if i == 0 else "")
+
+plt.xlabel('Age')
+plt.ylabel('Nodes')
+plt.title('Haberman Survival Dataset: класифікація нових об\'єктів (LogReg)')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Додатково: графік для SVM
+plt.figure(figsize=(10, 6))
+
+plt.scatter(data[data['Survival'] == 1]['Age'], data[data['Survival'] == 1]['Nodes'],
+            color='green', label='Вижив (1)', marker='o')
+plt.scatter(data[data['Survival'] == 0]['Age'], data[data['Survival'] == 0]['Nodes'],
+            color='red', label='Помер (0)', marker='s')
+
+for i, point in enumerate(new_objects):
+    color = 'green' if svm_predictions[i] == 1 else 'red'
+    plt.scatter(point[0], point[1], color=color, marker='x', s=100,
+                label='Новий об\'єкт (SVM)' if i == 0 else "")
+
+plt.xlabel('Age')
+plt.ylabel('Nodes')
+plt.title('Haberman Survival Dataset: класифікація нових об\'єктів (SVM)')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Етап 7: Порівняння
+print("\n=== Порівняння класифікації нових об'єктів ===")
+for i in range(len(new_objects)):
+    print(f"Об'єкт {i+1}: Age={new_objects[i][0]}, Nodes={new_objects[i][1]} → LogReg={log_predictions[i]}, SVM={svm_predictions[i]}")
